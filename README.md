@@ -4,4 +4,4 @@ It was used to perform the analysis presented in <a href="url">https://arxiv.org
 
 Dependencies (other than standard Python libraries): <code>healpy</code> and <code>camb</code>.
 
-The input files avaliable are for an ideal HWP. Realistic input files can be provided upon request.
+The avaliable input files are for an ideal HWP. Realistic input files can be provided upon request.
