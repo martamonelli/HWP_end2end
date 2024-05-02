@@ -8,10 +8,12 @@ from matplotlib import pyplot as plt
 
 class Sky_SEDs(object):
     '''
-    A class to define the sky model.
+    A class to compute CMB, dust and synchrotron SEDs.
     '''                    
     def __init__(self, Tdus = 19.6, beta_dus = 1.55, nu_star_dus = 353e9, beta_syn = -3.1, nu_star_syn = 30e9):
         '''
+        Initialize Sky_SEDs class.
+
         Keyword arguments
         -----------------
         Tdus : float
@@ -59,24 +61,32 @@ class Sky_SEDs(object):
         
     def CMB(self,nu):
         '''
-        Returns the CMB SED.
+        Returns CMB SED.
   
         Arguments
         -----------------
         nu : float
-            Frequency, or array of frequencies, in Hz       
+            Frequency, or array of frequencies, in Hz
+
+        Notes
+        -----------------
+                
         '''
         resp = self._CMB_resp(nu)/self._CMB_resp(nu)
         return resp
 
     def dus(self,nu):
         '''
-        Returns the dust SED.
+        Returns dust SED.
   
         Arguments
         -----------------
         nu : float
-            Frequency, or array of frequencies, in Hz      
+            Frequency, or array of frequencies, in Hz
+
+        Notes
+        -----------------
+               
         '''
         factor_1 = (nu/self.nu_star_dus)**self.beta_dus
         factor_2 = self._planck(nu,self.Tdus)/self._planck(self.nu_star_dus,self.Tdus)  
@@ -85,12 +95,16 @@ class Sky_SEDs(object):
         
     def syn(self,nu):
         '''
-        Returns the synchrotron SED.
+        Returns synchrotron SED.
   
         Arguments
         -----------------
         nu : float
-            Frequency, or array of frequencies, in Hz      
+            Frequency, or array of frequencies, in Hz
+
+        Notes
+        -----------------
+                
         '''
         factor_1 = (nu/self.nu_star_syn)**self.beta_syn
         factor_2 = self._CMB_resp(self.nu_star_syn)/self._CMB_resp(nu)
@@ -98,10 +112,12 @@ class Sky_SEDs(object):
       
 class Sky_Cls(object):
     '''
-    A class to define each the input angular power spectra.
+    A class to define 
     '''
     def __init__(self, lmax, params_path, params_dus_E = [323., -.40], params_dus_B = [199., -.50], params_syn_E = [2.3, -.84], params_syn_B = [0.8, -.76], theory_to_realization = False):
         '''
+        Initialize Sky_Cls class.
+
         Arguments
         -----------------
         lmax : int
@@ -148,7 +164,11 @@ class Sky_Cls(object):
         
     def CMB_scalar(self):
         '''
-        Returns the scalar-only CMB input Cls for multipoles in [0,lmax].  
+        Returns the angular power spectra induced by scalar perturbations from 0 to lmax.
+
+        Notes
+        -----------------
+                
         '''
         CAMB = self.powers['lensed_scalar']
         Dls = np.array([CAMB[:,0], CAMB[:,1], CAMB[:,2], CAMB[:,3]])
@@ -159,7 +179,11 @@ class Sky_Cls(object):
         
     def CMB_tensor(self):
         '''
-        Returns the tensor-only CMB input Cls for multipoles in [0,lmax].        
+        Returns the angular power spectra induced by tensor perturbations from 0 to lmax.
+
+        Notes
+        -----------------
+                
         '''
         CAMB = self.powers['tensor']
         Dls = np.array([CAMB[:,0], CAMB[:,1], CAMB[:,2], CAMB[:,3]])
@@ -170,12 +194,16 @@ class Sky_Cls(object):
         
     def CMB(self,r):
         '''
-        Returns the CMB input Cls for multipoles in [0,lmax].        
+        Returns the total angular power spectra induced by scalar and tensor perturbations from 0 to lmax.
   
         Arguments
         -----------------
         r : float
-            Value of the tensor-to-scalar ratio     
+            Value of the tensor-to-scalar ratio
+
+        Notes
+        -----------------
+                
         '''
         Cls = self.CMB_scalar() + r*self.CMB_tensor()
         if self.theory_to_realization:
@@ -184,7 +212,11 @@ class Sky_Cls(object):
 
     def dus(self):
         '''
-        Returns the dust input Cls for multipoles in [0,lmax].               
+        Returns the dust angular power spectra from 0 to lmax.
+
+        Notes
+        -----------------
+        Only the EE and BB spectra are non-zero.        
         '''
         Cls = np.empty((6,self.lmax+1))
         Cls[1] = self._Dls_power(self.q_dus_E,self.a_dus_E,self.lmax)*self.D2C
@@ -193,7 +225,11 @@ class Sky_Cls(object):
 
     def syn(self):
         '''
-        Returns the synchrotron input Cls for multipoles in [0,lmax].               
+        Returns the synchrotron angular power spectra from 0 to lmax.
+
+        Notes
+        -----------------
+        Only the EE and BB spectra are non-zero.        
         '''
         Cls = np.empty((6,self.lmax+1))       
         Cls[1] = self._Dls_power(self.q_syn_E,self.a_syn_E,self.lmax)*self.D2C
@@ -202,14 +238,16 @@ class Sky_Cls(object):
         
 class Instrument(object):
     '''
-    A class to define the instrument specifics
+    A class to define and work with the instrument specifics.
     '''
     def __init__(self, telescopes, lmax):
         '''
+        Initialize Instrument class.
+
         Arguments
         -----------------
-        telescopes : list of strings
-            Names of the telescopes considered
+        telescopes : str
+            It can be 'LFT','MFT', or 'HFT'
         lmax : int
             Highest multipole considered
         '''
@@ -218,7 +256,11 @@ class Instrument(object):
     
     def muellers_telescopes(self):
         '''
-        Returns the frequencies and Mueller matrices for all the telescopes.       
+        Returns the Mueller matrix elements for the given telescope.
+        
+        Notes
+        -----------------
+              
         '''
         ms_all = []
         fs_all = []
@@ -232,12 +274,17 @@ class Instrument(object):
          
     def muellers_channel(self,chan_dict):
         '''
-        Returns the frequencies and Mueller matrices for a particular channel.    
+        Returns the Mueller matrix elements of a specific frequency channel.
   
         Arguments
         -----------------
         chan_dict : dict
-            Dictionary with all the channel specifics, e.g. {'telescope':'LFT', 'nu':140., 'delta':42. , 'fwhm':23.7 , 'sensitivity':7.25 , 'sigma_alpha':1.8 }       
+            Must contain 'telescope', 'nu', and 'delta'.
+            For example {'telescope':'LFT', 'nu':40. , 'delta':12. , 'fwhm':70.5 , 'sensitivity':37.42, 'sigma_alpha':49.8}
+
+        Notes
+        -----------------
+              
         '''
         telescope = chan_dict['telescope']
         bandcenter = chan_dict['nu']*1e9         #Hz
@@ -253,48 +300,60 @@ class Instrument(object):
     
     def Nls(self,chan_dict):
         '''
-        Returns the noise Cls for multipoles in [0,lmax].
+        Returns noise angular power spectra from 0 to lmax.
   
         Arguments
         -----------------
         chan_dict : dict
-            Dictionary with all the channel specifics, e.g. {'telescope':'LFT', 'nu':140., 'delta':42. , 'fwhm':23.7 , 'sensitivity':7.25 , 'sigma_alpha':1.8 }       
+            Must contain 'sensitivity'.
+            For example {'telescope':'LFT', 'nu':40. , 'delta':12. , 'fwhm':70.5 , 'sensitivity':37.42, 'sigma_alpha':49.8}
+
+        Notes
+        -----------------
+                     
         '''
         sensitivity = chan_dict['sensitivity']
         return np.ones(self.lmax+1)*(np.pi*sensitivity/10800)**2   
         
     def Bls(self,chan_dict):
         '''
-        Returns the beam Cls for multipoles in [0,lmax].
+        Returns beam coefficients from 0 to lmax.
   
         Arguments
         -----------------
         chan_dict : dict
-            Dictionary with all the channel specifics, e.g. {'telescope':'LFT', 'nu':140., 'delta':42. , 'fwhm':23.7 , 'sensitivity':7.25 , 'sigma_alpha':1.8 }       
+            Must contain 'fwhm'.
+            For example {'telescope':'LFT', 'nu':40. , 'delta':12. , 'fwhm':70.5 , 'sensitivity':37.42, 'sigma_alpha':49.8}
+
+        Notes
+        -----------------
+              
         '''
         fwhm = chan_dict['fwhm']/60*(np.pi/180)  #radians
         return hp.gauss_beam(fwhm, lmax=self.lmax, pol=True)[:,2]
         
 class Analysis(object):
     '''
-    A class to define the functions used in the analysis.
+    A class to define all the functions used in the analysis.
     '''   
     def __init__(self, r_in, NSIDE, params_path, telescopes, chan_dicts, Tdus = 19.6, beta_dus = 1.55, nu_star_dus = 353e9, beta_syn = -3.1, nu_star_syn = 30e9,
                        params_dus_E = [323., -.40], params_dus_B = [199., -.50], params_syn_E = [2.3, -.84], params_syn_B = [0.8, -.76], theory_to_realization = False,
-                       plotting = False, ideal = True, gain_calibration = True, fews = True):
+                       plotting = False, ideal = True, gain_calibration = True, fews = True, pm = False):
         '''
+        Initialize Analysis class.
+
         Arguments
         -----------------
         r_in : float
-            Input value of the tensor-to-scalar ratio
+            input value of the tensor-to-scalar ratio
         NSIDE : int
             Healpy pixel resolution
         params_path : str
             String specifying the path to the parameter file for running CAMB
         telescopes : list of strings
-            Names of the telescopes considered
-        chan_dict : dict
-            Collection of all the channels' dictionaries
+            For example ['LFT','MFT','HFT']
+        chan_dicts : list of dictionaries
+            For an example, see params.py file
         
         Keyword arguments
         -----------------
@@ -305,37 +364,35 @@ class Analysis(object):
         nu_star_dus : float
             Dust reference frequency, in Hz (default: 353e9)
         beta_syn : float
-            Synchrotron spectral index, dimensionless (default: -3.1)
+            Synchrotron spectral index, dimensionless (default : -3.1)
         nu_star_syn : float
             Synchrotron reference frequency, in Hz (default: 30e9)
         params_dus_E : list of floats
-            Dust E-modes q and a power law parameters (default: [323., -.40])
+            Dust E-modes q and a power law parameters (default [323., -.40])
         params_dus_B : list of floats
-            Dust B-modes q and a power law parameters (default: [199., -.50])
+            Dust B-modes q and a power law parameters (default [199., -.50])
         params_syn_E : list of floats
-            Synchrotron E-modes q and a power law parameters (default: [2.3, -.84])
+            Synchrotron E-modes q and a power law parameters (default [2.3, -.84])
         params_syn_B : list of floats
-            Synchrotron B-modes q and a power law parameters (default: [0.8, -.76])
+            Synchrotron B-modes q and a power law parameters (default [0.8, -.76])
         theory_to_realization: bool
             If True, the returned CMB Cls are the ones of a particular realization
             If False, the returned CMB Cls are the theoretical ones
-            (default: False)
         plotting : bool
-            If True, the Mueller matrices are plotted
-            If False, this step is skipped
-            (default: False)
+            If True, plots the Mueller matrix elements for LFT, MFT and HFT, and saves the figure
         ideal : bool
-            If True, the HWP is assumed to be ideal
-            If False, non-idealities are considered
-            (default: True)
+            If True, assumes the HWP to be ideal
         gain_calibration : bool
-            If True, calibration of the temperature gain is included
-            If False, calibration is not performed
-            (default: True)
+            If True, performs (ideal) gain calibration
         fews : bool
-            If True, it only computes N_cov_model, N_cov, B_cov_CMB, B_cov_FGs
-            If False, B_cov_cmb_rho, B_cov_cmb_eta, B_cov_dus_rho, B_cov_dus_eta, B_cov_syn_rho, B_cov_syn_eta are also computed
-            (default: True)
+            If True, returns only the B_cov_all, B_cov_FGs_noise, N_cov_model covariances
+            If False, returns B_cov_all, B_cov_FGs_noise, N_cov_model, B_cov_cmb_rho, B_cov_cmb_eta, B_cov_dus_rho, B_cov_dus_eta, B_cov_syn_rho, B_cov_syn_eta
+        pm : bool
+            If True, returns the bounds of the asymmetric 68% CL interval for the MLE tensor-to-scalar ratio
+            
+        Notes
+        -----------------
+        All the default values are taken from 1807.06208
         '''
         self.Tdus = Tdus
         self.beta_dus = beta_dus
@@ -356,6 +413,7 @@ class Analysis(object):
         self.ideal = ideal
         self.gain_calibration = gain_calibration
         self.fews = fews
+        self.pm = pm
     
         self.lmax = 2*self.NSIDE + 1
         self.ell = np.arange(2,self.lmax+1)
@@ -393,17 +451,14 @@ class Analysis(object):
         f_LFT, f_MFT, f_HFT = freqs_temp                #stores f_LFT, f_MFT, f_HFT
         M_LFT, M_MFT, M_HFT = muellers_temp             #stores M_LFT, M_MFT, M_HFT
         
-        if plotting:        
+        if self.plotting:
+        
             plt.rcParams.update({
             "font.size":10,
             "text.usetex": True
             })  
             
             from matplotlib.ticker import FormatStrFormatter
-            
-            col_cmb = '#0E1428'
-            col_dus = '#F18805'
-            col_syn = '#F5B22B'
             
             ###
             
@@ -436,7 +491,7 @@ class Analysis(object):
             plt.tight_layout(pad=0.3)
             fig.subplots_adjust(wspace=0.35)
             plt.savefig('output/muellers.pdf')
-            plt.clf()            
+            plt.clf()  
         return     
 
     def _effective_SEDs(self, SED, muellers, ideal=True):
@@ -463,7 +518,7 @@ class Analysis(object):
         Nls, Bls = np.empty((2,self.nchan,self.lmax+1))  
         a_cmb, g_cmb, rho_cmb, eta_cmb = np.empty((4,self.nchan))
         a_dus, g_dus, rho_dus, eta_dus = np.empty((4,self.nchan))
-        a_syn, g_syn, rho_syn, eta_syn = np.empty((4,self.nchan))
+        a_syn, g_syn, rho_syn, eta_syn = np.empty((4,self.nchan)) 
            
         fwhms = np.empty(self.nchan)
         
@@ -479,13 +534,12 @@ class Analysis(object):
             a_dus[i], g_dus[i], rho_dus[i], eta_dus[i] = self._effective_SEDs(self.input_SEDs.dus(freqs_temp), muellers_temp, self.ideal)
             a_syn[i], g_syn[i], rho_syn[i], eta_syn[i] = self._effective_SEDs(self.input_SEDs.syn(freqs_temp), muellers_temp, self.ideal)
        
-        # uncomment to print the average of the coefficients (testing purposes)
         #if self.gain_calibration:
-        #    print('(rho_cmb/g_cmb)**2 averages to ', np.mean((rho_cmb/g_cmb)**2))
-        #    print('(eta_cmb/g_cmb)**2 averages to ', np.mean((eta_cmb/g_cmb)**2))        
+            #print('(rho_cmb/g_cmb)**2 averages to ', np.mean((rho_cmb/g_cmb)**2))
+            #print('(eta_cmb/g_cmb)**2 averages to ', np.mean((eta_cmb/g_cmb)**2))        
         #else:
-        #    print('(rho_cmb)**2 averages to ', np.mean((rho_cmb)**2))
-        #    print('(eta_cmb)**2 averages to ', np.mean((eta_cmb)**2))
+            #print('(rho_cmb)**2 averages to ', np.mean((rho_cmb)**2))
+            #print('(eta_cmb)**2 averages to ', np.mean((eta_cmb)**2))
        
         if self.fews:
             # filling covariance matrices    
@@ -544,7 +598,6 @@ class Analysis(object):
                 
             B_cov_all = B_cov_CMB + B_cov_FGs + N_cov
             B_cov_FGs_noise = B_cov_FGs + N_cov            
-            
             return B_cov_all, B_cov_FGs_noise, N_cov_model, B_cov_cmb_rho, B_cov_cmb_eta, B_cov_dus_rho, B_cov_dus_eta, B_cov_syn_rho, B_cov_syn_eta
         
     def compute_weights(self, B_cov):
@@ -552,12 +605,11 @@ class Analysis(object):
         B_w_temp = np.zeros((self.lmax+1,self.nchan))
         for l in np.arange(2,self.lmax+1):
             B_cov_inv = np.linalg.inv(B_cov[l])
-            # uncomment to print when the inversion is not precise (testing purposes)
-            #for power in -np.arange(9):
-            #    atol = 10.**power
-            #    if not np.allclose(np.dot(B_cov_inv,B_cov[l]), np.diag(np.ones(self.nchan)), atol=atol):
-            #        print('np.dot(cov,cov_inv) differs from identity (atol=1e' + str(power) + ') for ell = ' + str(l))
-            #        break
+            for power in -np.arange(9):
+                atol = 10.**power
+                if not np.allclose(np.dot(B_cov_inv,B_cov[l]), np.diag(np.ones(self.nchan)), atol=atol):
+                    #print('np.dot(cov,cov_inv) differs from identity (atol=1e' + str(power) + ') for ell = ' + str(l))
+                    break
             B_w_temp[l,:] = np.dot(B_cov_inv,e)/(e.transpose().dot(B_cov_inv.dot(e)))           
         return B_w_temp
         
@@ -573,29 +625,7 @@ class Analysis(object):
         logL = np.sum(logPl)
         return logL  
         
-    def estimate_r(self, BB_obs, ell, fsky, BB_prim, BB_model_minus_prim, r_sim, A_sim):
-        '''
-        Returns the MLE for r and its uncertainty, sigma_r, together with the profiled likelihood likelihood_r_p.
-        Same for A, sigma_A., and likelihood_A_p.
-        
-        Arguments
-        -----------------
-        BB_obs : array of floats
-            Observed Cls BB
-        ell : array of integers
-            Multipoles corresponding to BB_obs
-        fsky : float
-            Observed fraction of the sky
-        BB_prim : array of floats
-            Theoretical model for the primordial tensor BB Cls
-        BB_model_minus_prim : array of floats
-            Theoretical model for the BB Cls, minus the primordial tensor component
-        r_sim : array of floats
-            Set of values of the tensor-to-scalar ratio on which the likelihood is evaluated
-        A_sim : array of floats
-            Set of values of the amplitude A on which the likelihood is evaluated        
-        '''
-        
+    def estimate_r(self, BB_obs, ell, fsky, BB_prim, BB_model_minus_prim, r_sim, A_sim):       
         BB_obs = np.copy(BB_obs[ell])
         BB_prim = np.copy(BB_prim[ell])
         BB_model_minus_prim = np.copy(BB_model_minus_prim[ell])
@@ -609,7 +639,7 @@ class Analysis(object):
         
         # compute 2D likelihood
         for i in range(len(r_ids)):
-            logL[r_ids[i],A_ids[i]] = Analysis._likelihood_func(ell, BB_obs, BB_prim, BB_model_minus_prim, r_sim[r_ids[i]], A_sim[A_ids[i]])        
+                logL[r_ids[i],A_ids[i]] = Analysis._likelihood_func(ell, BB_obs, BB_prim, BB_model_minus_prim, r_sim[r_ids[i]], A_sim[A_ids[i]])        
         logL_norm = (logL - np.max(logL))
         likelihood = np.exp(logL_norm)
           
@@ -652,13 +682,13 @@ class Analysis(object):
         idx_l = argwhere_nearest(likelihood_r_p_LEFT, L_sigma)
         idx_r = np.argmax(likelihood_r_p) + argwhere_nearest(likelihood_r_p_RIGH, L_sigma)
         
-        # uncomment to print asymmetric confidence interval (testing purposes)
-        #print('the MLE for r is ', r)
-        #print('plus ', r_sim[idx_r]-r)
-        #print('minus ', r-r_sim[idx_l])
+        plus = r_sim[idx_r]-r
+        minus = r-r_sim[idx_l]
+        print('the MLE for r is ', r)
+        print('plus  ', plus)
+        print('minus ', minus)
                
-        ###     
-
+        ###    
         likelihood_A_p = np.max(likelihood, axis=0)
 
         A = A_sim[np.argmax(likelihood_A_p)]
@@ -673,15 +703,43 @@ class Analysis(object):
         
         sigma_A = (int1-int2)**0.5
         
+        A_LEFT = A_sim[:np.argmax(likelihood_A_p)+1]
+        A_RIGH = A_sim[np.argmax(likelihood_A_p):]
+        
+        likelihood_A_p_LEFT = likelihood_A_p[:np.argmax(likelihood_A_p)+1]     
+        likelihood_A_p_RIGH = likelihood_A_p[np.argmax(likelihood_A_p):]
+        
+        L_array = np.linspace(np.max(likelihood_A_p),0,1000)
+        int_lr = np.empty_like(L_array)
+        
+        for i in np.arange(len(L_array)):
+            idx_l = argwhere_nearest(likelihood_A_p_LEFT, L_array[i])
+            idx_r = np.argmax(likelihood_A_p) + argwhere_nearest(likelihood_A_p_RIGH, L_array[i])
+            dA_lr = A_sim[idx_l+1:idx_r+1]-A_sim[idx_l:idx_r]
+            int_lr[i] = np.sum((likelihood_A_p[idx_l+1:idx_r+1]+likelihood_A_p[idx_l:idx_r])*dA_lr/2)
+           
+        L_sigma = L_array[argwhere_nearest(int_lr/int_lr[-1], 0.68)]
+        idx_l = argwhere_nearest(likelihood_A_p_LEFT, L_sigma)
+        idx_r = np.argmax(likelihood_A_p) + argwhere_nearest(likelihood_A_p_RIGH, L_sigma)
+        
+        plus = A_sim[idx_r]-A
+        minus = A-A_sim[idx_l]
+        print('the MLE for A is ', A)
+        print('plus  ', plus)
+        print('minus ', minus)
+        
         ### marginalizing the likelihood
+        likelihood_r_m = np.sum((likelihood[:,1:]+likelihood[:,:-1])*dA/2, axis=1)
+        likelihood_A_m = np.sum((likelihood[1:,:]+likelihood[:-1,:]).transpose()*dr/2, axis=1)
         
-        likelihood_r_m = np.sum((likelihood[:,1:]+likelihood[:,:-1])*dr/2, axis=1)
-        likelihood_A_m = np.sum((likelihood[1:,:]+likelihood[:-1,:]).transpose()*dA/2, axis=1)
+        ### comparing profiled and marginalized likelihoods
+        test0 = np.sum(np.abs((likelihood_r_m/np.max(likelihood_r_m)-likelihood_r_p/np.max(likelihood_r_p))))
+        print('integrated deviation for r: ', test0/np.sum(likelihood_r_p/np.max(likelihood_r_p)))
         
-        # uncomment to compare marginalized with profile likelihoods (testing purposes)
-        #test = np.abs((likelihood_r_m/np.max(likelihood_r_m)-likelihood_r_p/np.max(likelihood_r_p)))
-        #print('maximum relative deviation for r: ', np.max(test/(likelihood_r_p/np.max(likelihood_r_p))))
-        #test = np.abs((likelihood_A_m/np.max(likelihood_A_m)-likelihood_A_p/np.max(likelihood_A_p)))
-        #print('maximum relative deviation for A: ', np.max(test/(likelihood_A_p/np.max(likelihood_A_p))))
+        test0 = np.sum(np.abs((likelihood_A_m/np.max(likelihood_A_m)-likelihood_A_p/np.max(likelihood_A_p))))
+        print('integrated deviation for A: ', test0/np.sum(likelihood_A_p/np.max(likelihood_A_p)))
         
-        return r, sigma_r, likelihood_r_p, A, sigma_A, likelihood_A_p   
+        if self.pm == True:
+            return r, plus, minus, likelihood_r_p, A, sigma_A, likelihood_A_p   
+        else:
+            return r, sigma_r, likelihood_r_p, A, sigma_A, likelihood_A_p             

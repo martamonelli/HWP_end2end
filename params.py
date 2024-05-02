@@ -1,13 +1,16 @@
 import numpy as np
 
-### SEDs params (from 1807.06208)
+r_sim = np.linspace(0., 0.036, num = 9000)
+A_sim = np.linspace(0.7, 1.3, num = 2000)
+
+#SEDs params (from 1807.06208)
 Tdus = 19.6		#K
 beta_dus = 1.55
 nu_star_dus = 353e9
 beta_syn = -3.1
 nu_star_syn = 30e9
 
-### input Cls params (from 1807.06208)
+###
 
 NSIDE = 512
 
@@ -25,11 +28,11 @@ a_syn_E = -.84
 q_syn_B = 0.8
 a_syn_B = -.76
 
-### instrument specifics
+###
 
 telescopes = ['LFT','MFT','HFT']
 
-# list of all LiteBIRD channels with their relevant properties (from 2202.02773)
+# list of all channels
 chan_dicts = np.array([{'telescope':'LFT', 'nu':40. , 'delta':12. , 'fwhm':70.5 , 'sensitivity':37.42, 'sigma_alpha':49.8},
                        {'telescope':'LFT', 'nu':50. , 'delta':15. , 'fwhm':58.5 , 'sensitivity':33.46, 'sigma_alpha':39.8},
                        {'telescope':'LFT', 'nu':60. , 'delta':14. , 'fwhm':51.1 , 'sensitivity':21.31, 'sigma_alpha':16.1},
